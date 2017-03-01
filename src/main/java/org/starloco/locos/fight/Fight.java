@@ -3020,7 +3020,6 @@ public class Fight {
         }
         while ((cell == null || !cell.getFighters().isEmpty()) && limit < 80);
         if (limit == 80) {
-            if (Config.INSTANCE.getDEBUG())
             return null;
         }
         return cell;

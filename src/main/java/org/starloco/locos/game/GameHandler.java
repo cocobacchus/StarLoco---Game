@@ -39,8 +39,7 @@ public class GameHandler implements IoHandler {
         Integer i = new Integer(0);
         do {
             client.parsePacket(s[i]);
-            if (Config.INSTANCE.getDEBUG())
-                World.world.logger.trace((client.getPlayer() == null ? "" : client.getPlayer().getName()) + " <-- " + s[i]);
+            client.logger.trace((client.getPlayer() == null ? "" : client.getPlayer().getName()) + " <-- " + s[i]);
             i++;
         } while (i == s.length - 1);
     }
@@ -60,8 +59,8 @@ public class GameHandler implements IoHandler {
                 arg1.getMessage().startsWith("Connection reset by peer") || arg1.getMessage().startsWith("Connection timed out")))
             return;
         arg1.printStackTrace();
-        if (Config.INSTANCE.getDEBUG())
-            World.world.logger.error("Exception connexion client : " + arg1.getMessage());
+        GameClient client = (GameClient) arg0.getAttachment();
+        client.logger.warn("Exception connexion client : " + arg1.getMessage());
         this.kick(arg0);
     }
 
@@ -70,13 +69,11 @@ public class GameHandler implements IoHandler {
         GameClient client = (GameClient) arg0.getAttachment();
 
         if (client != null) {
-            if (Config.INSTANCE.getDEBUG()) {
-                String packet = (String) arg1;
-                if (Config.INSTANCE.getENCRYPT_PACKET() && !packet.startsWith("AT") && !packet.startsWith("HG"))
-                    packet = World.world.getCryptManager().decryptMessage(packet, client.getPreparedKeys()).replace("\n", "");
-                if (packet.startsWith("am")) return;
-                World.world.logger.trace((client.getPlayer() == null ? "" : client.getPlayer().getName()) + " --> " + packet);
-            }
+            String packet = (String) arg1;
+            if (Config.INSTANCE.getENCRYPT_PACKET() && !packet.startsWith("AT") && !packet.startsWith("HG"))
+                packet = World.world.getCryptManager().decryptMessage(packet, client.getPreparedKeys()).replace("\n", "");
+            if (packet.startsWith("am")) return;
+            client.logger.trace((client.getPlayer() == null ? "" : client.getPlayer().getName()) + " --> " + packet);
         }
     }
 

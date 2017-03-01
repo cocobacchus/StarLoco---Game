@@ -17,11 +17,6 @@ object ConfigReader {
         this.data = EnvironmentVariables() overriding ConfigurationProperties.fromFile(File("config.properties"))
     }
 
-    object console : PropertyGroup() {
-        val debug by booleanType
-        val logs by booleanType
-    }
-
     object server : PropertyGroup() {
         val id by intType
         val key by stringType

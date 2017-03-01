@@ -1637,8 +1637,8 @@ public class GameMap {
         synchronized (cell) {
             GameObject obj = cell.getDroppedItem(true);
             if (obj != null && !Main.INSTANCE.getMapAsBlocked()) {
-                if (Logging.USE_LOG)
-                    Logging.getInstance().write("Object", "GetInOnTheFloor : " + player.getName() + " a ramassé [" + obj.getTemplate().getId() + "@" + obj.getGuid() + ";" + obj.getQuantity() + "]");
+                Logging.objects.debug("Object", "GetInOnTheFloor : {} a ramassé [{}@{}*{}]",
+                        player.getName(), obj.getTemplate().getId(), obj.getGuid(), obj.getQuantity());
                 if (player.addObjet(obj, true))
                     World.world.addGameObject(obj, true);
                 SocketManager.GAME_SEND_GDO_PACKET_TO_MAP(this, '-', id, 0, 0);

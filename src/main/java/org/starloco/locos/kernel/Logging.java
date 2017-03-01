@@ -11,23 +11,12 @@ import java.util.ArrayList;
 import java.util.Calendar;
 
 public class Logging {
-    private static final Logging singleton = new Logging();
-    public static boolean USE_LOG = true;
 
-    public static Logging getInstance() {
-        return singleton;
-    }
+    public static final Logger objects = LoggerFactory.getLogger("Object");
+    public static final Logger globalMessage = LoggerFactory.getLogger("GlobalMessage");
+    public static final Logger command = LoggerFactory.getLogger("Command");
+    public static final Logger tchat = LoggerFactory.getLogger("Tchat");
+    public static final Logger craft = LoggerFactory.getLogger("Craft");
 
-    public void initialize() {
-    }
-
-    public void stop() {
-
-    }
-
-    public void write(String name, String arg0) {
-        Logger logger = LoggerFactory.getLogger(name);
-        logger.info(arg0);
-    }
 
 }

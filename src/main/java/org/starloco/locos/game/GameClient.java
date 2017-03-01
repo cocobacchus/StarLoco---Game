@@ -1,6 +1,8 @@
 package org.starloco.locos.game;
 
+import ch.qos.logback.classic.Logger;
 import org.apache.mina.core.session.IoSession;
+import org.slf4j.LoggerFactory;
 import org.starloco.locos.area.map.GameCase;
 import org.starloco.locos.area.map.GameMap;
 import org.starloco.locos.area.map.entity.*;
@@ -74,6 +76,7 @@ public class GameClient {
     private Account account;
     private Player player;
     private boolean walk = false;
+    org.slf4j.Logger logger;
     private AdminUser adminUser;
     private final Map<Integer, GameAction> actions = new HashMap<>();
     public long timeLastTradeMsg = 0, timeLastRecrutmentMsg = 0, timeLastAlignMsg = 0, timeLastChatMsg = 0, timeLastIncarnamMsg = 0, timeLastTaverne, lastPacketTime = 0, action = 0;
@@ -84,6 +87,8 @@ public class GameClient {
     public GameClient(IoSession session) {
         this.session = session;
         this.session.write("HG");
+        String IP = ((InetSocketAddress) (this.getSession().getRemoteAddress())).getAddress().getHostAddress();
+        logger = LoggerFactory.getLogger(IP);
     }
     
     public IoSession getSession() {
@@ -112,14 +117,6 @@ public class GameClient {
         if (packet.length() > 3 && packet.substring(0, 4).equalsIgnoreCase("ping")) {
             SocketManager.GAME_SEND_PONG(this);
             return;
-        }
-        if(Logging.USE_LOG) {
-            if (this.player != null) {
-                Logging.getInstance().write("RecvPacket", this.player.getName() + " : " + this.player.getAccount().getCurrentIp() + " : " + packet);
-            } else {
-                String IP = ((InetSocketAddress) (this.getSession().getRemoteAddress())).getAddress().getHostAddress();
-                Logging.getInstance().write("RecvPacket", IP + " : " + packet);
-            }
         }
 
         if(Config.INSTANCE.getAUTO_EVENT()) {
@@ -501,6 +498,7 @@ public class GameClient {
 
         if (this.account.getPlayers().get(id) != null) {
             this.player = this.account.getPlayers().get(id);
+            this.logger = LoggerFactory.getLogger(this.player.getName());
             if (this.player != null) {
                 if(this.player.isDead() == 1 && Config.INSTANCE.getHEROIC())
                     this.getSession().write("BN");
@@ -523,6 +521,7 @@ public class GameClient {
             } else {
                 Main.INSTANCE.getGameServer().deleteWaitingAccount(this.account);
 
+                logger = LoggerFactory.getLogger(this.account.getName());
                 String ip = this.session.getRemoteAddress().toString().substring(1).split(":")[0];
                 
                 if(this.account.getGameClient() != null)
@@ -532,7 +531,7 @@ public class GameClient {
                 this.account.setCurrentIp(ip);
                 Database.getStatics().getAccountData().setLogged(this.account.getId(), 1);
 
-                if (Logging.USE_LOG) Logging.getInstance().write("AccountIpConnect", this.account.getName() + " > " + ip);
+                logger.info("new account connected {} ", this.account.getName() + " > " + ip);
 
                 if(Config.INSTANCE.getENCRYPT_PACKET()){
                     //String key = generateKey();
@@ -591,8 +590,7 @@ public class GameClient {
             return;
         }
 
-        if (Logging.USE_LOG)
-            Logging.getInstance().write("CommandAdmin", this.getAccount().getCurrentIp() + " : " + this.getAccount().getName() + " > " + this.getPlayer().getName() + " > " + packet.substring(2));
+        Logging.command.info(this.getAccount().getCurrentIp() + " : " + this.getAccount().getName() + " > " + this.getPlayer().getName() + " > " + packet.substring(2));
 
         this.adminUser.apply(packet);
     }
@@ -656,8 +654,7 @@ public class GameClient {
                     SocketManager.GAME_SEND_cMK_PACKET_TO_FIGHT(this.player.getFight(), team, "#", this.player.getId(), this.player.getName(), msg);
                     return;
                 }
-                if (Logging.USE_LOG)
-                    Logging.getInstance().write("DefaultMessage", this.player.getName() + " > Map " + this.player.getCurMap().getId() + " > " + msg);
+                Logging.tchat.info("Default" + this.player.getName() + " > Map " + this.player.getCurMap().getId() + " > " + msg);
                 if (this.player.getObjetByPos(Constant.ITEM_POS_ROLEPLAY_BUFF) != null)
                     if (this.player.getObjetByPos(Constant.ITEM_POS_ROLEPLAY_BUFF).getTemplate().getId() == 10844)
                         msg = Formulas.translateMsg(msg);
@@ -697,8 +694,7 @@ public class GameClient {
                     int team = this.player.getFight().getTeamId(this.player.getId());
                     if (team == -1)
                         return;
-                    if (Logging.USE_LOG)
-                        Logging.getInstance().write("TeamMessage", this.player.getName()
+                    Logging.tchat.info("Team" + this.player.getName()
                                 + " > " + this.player.getFight() + " > " + msg);
                     if (this.player.getObjetByPos(Constant.ITEM_POS_ROLEPLAY_BUFF) != null)
                         if (this.player.getObjetByPos(Constant.ITEM_POS_ROLEPLAY_BUFF).getTemplate().getId() == 10844)
@@ -713,9 +709,8 @@ public class GameClient {
                 if (this.player.getParty() == null)
                     break;
                 msg = packet.split("\\|", 2)[1];
-                if (Logging.USE_LOG)
-                    Logging.getInstance().write("PartyMessage", this.player.getName()
-                            + " > " + this.player.getParty() + " > " + msg);
+                Logging.tchat.info(("Party" + this.player.getName()
+                            + " > " + this.player.getParty() + " > " + msg));
                 if (this.player.getObjetByPos(Constant.ITEM_POS_ROLEPLAY_BUFF) != null)
                     if (this.player.getObjetByPos(Constant.ITEM_POS_ROLEPLAY_BUFF).getTemplate().getId() == 10844)
                         msg = Formulas.translateMsg(msg);
@@ -745,9 +740,8 @@ public class GameClient {
                     }
                     timeLastTradeMsg = System.currentTimeMillis();
                     msg = packet.split("\\|", 2)[1];
-                    if (Logging.USE_LOG)
-                        Logging.getInstance().write("TradeMessage", this.player.getName()
-                                + " > " + msg);
+                    Logging.tchat.info(("Trade" + this.player.getName()
+                                + " > " + msg));
                     if (this.player.getObjetByPos(Constant.ITEM_POS_ROLEPLAY_BUFF) != null)
                         if (this.player.getObjetByPos(Constant.ITEM_POS_ROLEPLAY_BUFF).getTemplate().getId() == 10844)
                             msg = Formulas.translateMsg(msg);
@@ -758,9 +752,8 @@ public class GameClient {
                 if (this.player.getGroupe() == null)
                     return;
                 msg = packet.split("\\|", 2)[1];
-                if (Logging.USE_LOG)
-                    Logging.getInstance().write("AdminMessage", this.player.getName()
-                            + " > " + msg);
+                Logging.tchat.info(("Admin " + this.player.getName()
+                            + " > " + msg));
                 SocketManager.GAME_SEND_cMK_PACKET_TO_ADMIN("@", this.player.getId(), this.player.getName(), msg);
                 break;
             case '?'://Canal recrutement
@@ -787,9 +780,8 @@ public class GameClient {
                     }
                     timeLastRecrutmentMsg = System.currentTimeMillis();
                     msg = packet.split("\\|", 2)[1];
-                    if (Logging.USE_LOG)
-                        Logging.getInstance().write("RecruitmentMessage", this.player.getName()
-                                + " > " + msg);
+                    Logging.tchat.info(("Recruitment"+ this.player.getName()
+                                + " > " + msg));
                     if (this.player.getObjetByPos(Constant.ITEM_POS_ROLEPLAY_BUFF) != null)
                         if (this.player.getObjetByPos(Constant.ITEM_POS_ROLEPLAY_BUFF).getTemplate().getId() == 10844)
                             msg = Formulas.translateMsg(msg);
@@ -802,9 +794,8 @@ public class GameClient {
                 if (this.player.getGuild() == null)
                     return;
                 msg = packet.split("\\|", 2)[1];
-                if (Logging.USE_LOG)
-                    Logging.getInstance().write("GuildMessage", this.player.getName()
-                            + " > " + this.player.getGuild().getName() + " > " + msg);
+                Logging.tchat.info(("Guild" + this.player.getName()
+                            + " > " + this.player.getGuild().getName() + " > " + msg));
                 if (this.player.getObjetByPos(Constant.ITEM_POS_ROLEPLAY_BUFF) != null)
                     if (this.player.getObjetByPos(Constant.ITEM_POS_ROLEPLAY_BUFF).getTemplate().getId() == 10844)
                         msg = Formulas.translateMsg(msg);
@@ -831,9 +822,8 @@ public class GameClient {
                 }
                 timeLastAlignMsg = System.currentTimeMillis();
                 msg = packet.split("\\|", 2)[1];
-                if (Logging.USE_LOG)
-                    Logging.getInstance().write("AlignMessage", this.player.getName()
-                            + " > " + msg);
+                Logging.tchat.info(("Align"+ this.player.getName()
+                            + " > " + msg));
                 if (this.player.getObjetByPos(Constant.ITEM_POS_ROLEPLAY_BUFF) != null)
                     if (this.player.getObjetByPos(Constant.ITEM_POS_ROLEPLAY_BUFF).getTemplate().getId() == 10844)
                         msg = Formulas.translateMsg(msg);
@@ -869,8 +859,7 @@ public class GameClient {
                         return;
                     }
 
-                    if (Logging.USE_LOG)
-                        Logging.getInstance().write("PrivateMessage", this.player.getName() + " à " + target.getName() + " > " + msg);
+                    Logging.tchat.info(("Private"+ this.player.getName() + " à " + target.getName() + " > " + msg));
                     if (this.player.getObjetByPos(Constant.ITEM_POS_ROLEPLAY_BUFF) != null)
                         if (this.player.getObjetByPos(Constant.ITEM_POS_ROLEPLAY_BUFF).getTemplate().getId() == 10844)
                             msg = Formulas.translateMsg(msg);
@@ -4001,10 +3990,9 @@ public class GameClient {
             }
             if (result == 0) {
                 if (targetCell.getObject() != null) {
-                    if (Config.INSTANCE.getDEBUG()) {
-                        World.world.logger.error("#1# Object Interactif : " + targetCell.getObject().getId());
-                        World.world.logger.error("#1# On cellule : " + targetCell.getId());
-                    }
+                    logger.debug("Object Interactif {} sur la cell {} en fin de deplacement",
+                            targetCell.getObject().getId(), targetCell.getId());
+
                     InteractiveObject.getActionIO(this.player, targetCell, targetCell.getObject().getId());
                     InteractiveObject.getSignIO(this.player, targetCell.getId(), targetCell.getObject().getId());
                     SocketManager.GAME_SEND_GA_PACKET(this, "", "0", "", "");
@@ -4041,10 +4029,9 @@ public class GameClient {
                     this.player.setAway(false);
                 this.player.getCurMap().onPlayerArriveOnCell(this.player, this.player.getCurCell().getId());
                 if (targetCell.getObject() != null) {
-                    if (Config.INSTANCE.getDEBUG()) {
-                        World.world.logger.error("#3# Object Interactif : " + targetCell.getObject().getId());
-                        World.world.logger.error("#3# On cellule : " + targetCell.getId());
-                    }
+                    logger.debug("Object Interactif {} sur la cell {} apres action",
+                            targetCell.getObject().getId(), targetCell.getId());
+
                     InteractiveObject.getActionIO(this.player, targetCell, targetCell.getObject().getId());
                     InteractiveObject.getSignIO(this.player, targetCell.getId(), targetCell.getObject().getId());
                 }
@@ -4519,10 +4506,9 @@ public class GameClient {
                             this.player.setAway(false);
                         this.player.getCurMap().onPlayerArriveOnCell(this.player, this.player.getCurCell().getId());
                         if (targetCell.getObject() != null) {
-                            if (Config.INSTANCE.getDEBUG()) {
-                                World.world.logger.error("#2# Object Interactif : " + targetCell.getObject().getId());
-                                World.world.logger.error("#2# On cellule : " + targetCell.getId());
-                            }
+
+                            logger.debug("Object Interactif {} sur la cell {} apres action",
+                                    targetCell.getObject().getId(), targetCell.getId());
                             InteractiveObject.getActionIO(this.player, targetCell, targetCell.getObject().getId());
                             InteractiveObject.getSignIO(this.player, targetCell.getId(), targetCell.getObject().getId());
                         }
@@ -5627,8 +5613,7 @@ public class GameClient {
             this.player.getCurMap().getCase(cellPosition).addDroppedItem(obj2);
             SocketManager.GAME_SEND_OBJECT_QUANTITY_PACKET(this.player, obj);
         }
-        if (Logging.USE_LOG)
-            Logging.getInstance().write("Object", "Dropping : " + this.player.getName() + " a jeté [" + obj.getTemplate().getId() + "@" + obj.getGuid() + ";" + qua + "]");
+        Logging.objects.debug("Dropping : " + this.player.getName() + " a jeté [" + obj.getTemplate().getId() + "@" + obj.getGuid() + ";" + qua + "]");
         SocketManager.GAME_SEND_Ow_PACKET(this.player);
         SocketManager.GAME_SEND_GDO_PACKET_TO_MAP(this.player.getCurMap(), '+', this.player.getCurMap().getCase(cellPosition).getId(), obj.getTemplate().getId(), 0);
         SocketManager.GAME_SEND_STATS_PACKET(this.player);
@@ -6895,17 +6880,14 @@ public class GameClient {
         if (GA.actionId == 1)
             walk = true;
 
-        if (Config.INSTANCE.getDEBUG())
-            World.world.logger.error("Game > Create action id : " + GA.id);
-        if (Config.INSTANCE.getDEBUG())
-            World.world.logger.error("Game > Packet : " + GA.packet);
+        logger.debug("Game > Create action id : " + GA.id);
+        logger.debug("Game > Packet : " + GA.packet);
     }
 
     public synchronized void removeAction(GameAction GA) {
         if (GA.actionId == 1)
             walk = false;
-        if (Config.INSTANCE.getDEBUG())
-            World.world.logger.error("Game >  Delete action id : " + GA.id);
+        logger.info("Game >  Delete action id : " + GA.id);
         actions.remove(GA.id);
 
         if (actions.get(-1) != null && GA.actionId == 1)//Si la queue est pas vide
@@ -7008,7 +6990,7 @@ public class GameClient {
                 packet = World.world.getCryptManager().cryptMessage(packet, this.preparedKeys);
             this.getSession().write(packet);
         } catch(Exception e) {
-            Logging.getInstance().write("Error", "Send fail : " + packet);
+            logger.warn("Send fail : " + packet);
             e.printStackTrace();
         }
     }

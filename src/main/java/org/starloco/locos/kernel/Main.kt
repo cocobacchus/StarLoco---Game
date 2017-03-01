@@ -53,20 +53,11 @@ object Main {
                     GameServer.setState(0)
 
                     Main.gameServer.kickAll(true)
-                    Logging.getInstance().stop()
                     Database.getStatics().serverData.loggedZero()
                 }
                 Main.logger.info("The server is now closed.")
             }
         })
-
-        try {
-            System.setOut(PrintStream(System.out, true, "IBM850"))
-            if (!File("Logs/Error").exists()) File("Logs/Error").mkdir()
-            System.setErr(PrintStream(FileOutputStream("Logs/Error/" + SimpleDateFormat("dd-MM-yyyy - HH-mm-ss", Locale.FRANCE).format(Date()) + ".log")))
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
 
         Main.start()
     }
@@ -78,8 +69,6 @@ object Main {
         Main.logger.debug("Current timestamp ms : ${System.currentTimeMillis()}")
         Main.logger.debug("Current timestamp ns : ${System.nanoTime()}")
 
-        Logging.getInstance().initialize()
-
         if (Database.launchDatabase()) {
             Config.isRunning = true
             World.world.createWorld()
@@ -90,11 +79,6 @@ object Main {
 
             Main.refreshTitle()
             Main.logger.info("The server is ready ! Waiting for connection..\n")
-
-            if (!Config.DEBUG) {
-                val root = org.slf4j.LoggerFactory.getLogger(ch.qos.logback.classic.Logger.ROOT_LOGGER_NAME) as ch.qos.logback.classic.Logger
-                root.level = Level.OFF
-            }
 
             while (Config.isRunning) {
                 try {
@@ -132,7 +116,7 @@ object Main {
     }
 
     fun stop(reason: String) {
-        Logging.getInstance().write("Error", reason)
+        logger.error("Error, stopping server : {}", reason)
         System.exit(0)
     }
 

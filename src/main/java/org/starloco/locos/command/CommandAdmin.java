@@ -74,15 +74,7 @@ public class CommandAdmin extends AdminUser {
     }
 
     public void command(String command, String[] infos, String msg) {
-        if (command.equalsIgnoreCase("LOG")) {
-            Config.INSTANCE.setDEBUG(!Config.INSTANCE.getDEBUG());
-            this.sendMessage("Les logs console sont : "
-                    + (Config.INSTANCE.getDEBUG() ? "active" : "disable"));
-            if(infos.length > 1) {
-                EventManager.getInstance().startNewEvent();
-            }
-            return;
-        } else if (command.equalsIgnoreCase("CHALL")) {
+        if (command.equalsIgnoreCase("CHALL")) {
             Challenge challenge = new Challenge(this.getPlayer().getFight(), Integer.parseInt(infos[1]), 0, 0);
             this.getPlayer().getFight().getAllChallenges().put(Integer.parseInt(infos[1]), challenge);
             challenge.fightStart();

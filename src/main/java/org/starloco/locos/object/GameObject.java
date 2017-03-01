@@ -297,9 +297,8 @@ public class GameObject {
     public void setQuantity(int quantity) {
         if (quantity <= 0)
             quantity = 0;
-        else if (quantity >= 100000)
-            if (Logging.USE_LOG)
-                Logging.getInstance().write("Object", "Faille : Objet guid : " + guid + " a dépassé 100 000 qua (" + quantity + ") avec comme template : " + template.getName() + " (" + template.getId() + ")");
+        else if (quantity >= 100_000)
+            Logging.objects.warn("Faille : Objet guid : " + guid + " a dépassé 100 000 qua (" + quantity + ") avec comme template : " + template.getName() + " (" + template.getId() + ")");
 
         this.quantity = quantity;
         this.setModification();
