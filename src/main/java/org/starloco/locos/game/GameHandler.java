@@ -1,5 +1,6 @@
 package org.starloco.locos.game;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apache.mina.core.service.IoHandler;
 import org.apache.mina.core.session.IdleStatus;
 import org.apache.mina.core.session.IoSession;
@@ -8,6 +9,7 @@ import org.starloco.locos.game.world.World;
 import org.starloco.locos.kernel.Config;
 import org.starloco.locos.kernel.Main;
 
+@Slf4j
 public class GameHandler implements IoHandler {
 
     private final static PacketFilter filter = new PacketFilter().activeSafeMode();
@@ -17,9 +19,8 @@ public class GameHandler implements IoHandler {
         if (!filter.authorizes(arg0.getRemoteAddress().toString().substring(1).split(":")[0])) {
             arg0.close(true);
         } else {
-            World.world.logger.info("Session " + arg0.getId() + " created");
+            log.info("Session " + arg0.getId() + " created");
             arg0.setAttachment(new GameClient(arg0));
-            Main.INSTANCE.refreshTitle();
         }
     }
 
@@ -36,12 +37,10 @@ public class GameHandler implements IoHandler {
 
         String[] s = packet.split("\n");
 
-        Integer i = new Integer(0);
-        do {
-            client.parsePacket(s[i]);
-            client.logger.trace((client.getPlayer() == null ? "" : client.getPlayer().getName()) + " <-- " + s[i]);
-            i++;
-        } while (i == s.length - 1);
+        for(String str : s){
+            client.parsePacket(str);
+            client.logger.trace(" <-- " + str);
+        }
     }
 
     @Override
@@ -73,7 +72,7 @@ public class GameHandler implements IoHandler {
             if (Config.INSTANCE.getENCRYPT_PACKET() && !packet.startsWith("AT") && !packet.startsWith("HG"))
                 packet = World.world.getCryptManager().decryptMessage(packet, client.getPreparedKeys()).replace("\n", "");
             if (packet.startsWith("am")) return;
-            client.logger.trace((client.getPlayer() == null ? "" : client.getPlayer().getName()) + " --> " + packet);
+            client.logger.trace(" --> " + packet);
         }
     }
 
@@ -84,12 +83,12 @@ public class GameHandler implements IoHandler {
 
     @Override
     public void sessionIdle(IoSession arg0, IdleStatus arg1) throws Exception {
-        World.world.logger.info("Session " + arg0.getId() + " idle");
+        log.info("Session " + arg0.getId() + " idle");
 }
 
     @Override
     public void sessionOpened(IoSession arg0) throws Exception {
-        World.world.logger.info("Session " + arg0.getId() + " opened");
+        log.info("Session " + arg0.getId() + " opened");
     }
 
     private void kick(IoSession arg0) {
@@ -98,6 +97,5 @@ public class GameHandler implements IoHandler {
             client.kick();
             arg0.setAttachment(null);
         }
-        Main.INSTANCE.refreshTitle();
     }
 }

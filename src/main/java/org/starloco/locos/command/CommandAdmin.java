@@ -21,6 +21,7 @@ import org.starloco.locos.entity.npc.Npc;
 import org.starloco.locos.entity.npc.NpcTemplate;
 import org.starloco.locos.entity.pet.PetEntry;
 import org.starloco.locos.event.EventManager;
+import org.starloco.locos.exchange.ExchangeClient;
 import org.starloco.locos.fight.Challenge;
 import org.starloco.locos.fight.Fight;
 import org.starloco.locos.game.GameClient;
@@ -246,8 +247,8 @@ public class CommandAdmin extends AdminUser {
                 this.sendMessage(mess);
             }
 
-            if (Main.INSTANCE.getGameServer().getClients().size() - 30 > 0) {
-                mess = "Et " + (Main.INSTANCE.getGameServer().getClients().size() - 30)
+            if (GameServer.getClients().size() - 30 > 0) {
+                mess = "Et " + (GameServer.getClients().size() - 30)
                         + " autres personnages";
                 this.sendMessage(mess);
             }
@@ -257,7 +258,7 @@ public class CommandAdmin extends AdminUser {
         } else if (command.equalsIgnoreCase("WHOALL")) {
             String mess = "\n<u>Liste des joueurs en ligne :</u>";
             this.sendMessage(mess);
-            for (GameClient client : Main.INSTANCE.getGameServer().getClients()) {
+            for (GameClient client : GameServer.getClients()) {
                 Player player = client.getPlayer();
 
                 if (player == null)
@@ -282,7 +283,7 @@ public class CommandAdmin extends AdminUser {
         } else if (command.equalsIgnoreCase("WHOFIGHT")) {
             String mess = "";
             this.sendMessage("\n<u>Liste des joueurs en ligne et en combat :</u>");
-            for (GameClient client : Main.INSTANCE.getGameServer().getClients()) {
+            for (GameClient client : GameServer.getClients()) {
                 Player player = client.getPlayer();
 
                 if (player == null)
@@ -873,7 +874,7 @@ public class CommandAdmin extends AdminUser {
                     gc.kick();
                 }
             }
-            Main.INSTANCE.getExchangeClient().send("SB" + IP);
+            ExchangeClient.INSTANCE.send("SB" + IP);
             if (Database.getStatics().getBanIpData().add(IP))
                 this.sendMessage("L'IP "
                         + IP + " a ete banni.");
@@ -917,7 +918,7 @@ public class CommandAdmin extends AdminUser {
                     gc.kick();
                 }
             }
-            Main.INSTANCE.getExchangeClient().send("SB" + IP);
+            ExchangeClient.INSTANCE.send("SB" + IP);
             if (Database.getStatics().getBanIpData().add(IP))
                 this.sendMessage("L'IP "
                         + IP + " a ete banni.");
@@ -1258,7 +1259,7 @@ public class CommandAdmin extends AdminUser {
             } catch (Exception e) {
                 // ok
             }
-            GameServer.setState(etat);
+            GameServer.INSTANCE.setState(etat);
             this.sendMessage("Vous avez change l'etat du serveur en "
                     + etat + ".");
             return;
@@ -1471,9 +1472,9 @@ public class CommandAdmin extends AdminUser {
             int sec = (int) (uptime / (1000));
 
             String message = "\n<u><b>Global informations system of the StarLoco emulator :</b></u>\n\n<u>Uptime :</u> " + day + "j " + hour + "h " + min + "m " + sec + "s.\n";
-            message += "Online players         : " + Main.INSTANCE.getGameServer().getClients().size() + "\n";
-            message += "Unique online players  : " + Main.INSTANCE.getGameServer().getPlayersNumberByIp() + "\n";
-            message += "Online clients         : " + Main.INSTANCE.getGameServer().getClients().size() + "\n";
+            message += "Online players         : " + GameServer.getClients().size() + "\n";
+            message += "Unique online players  : " + GameServer.getPlayersNumberByIp() + "\n";
+            message += "Online clients         : " + GameServer.getClients().size() + "\n";
 
 
             int mb = 1024 * 1024;
@@ -1547,7 +1548,7 @@ public class CommandAdmin extends AdminUser {
             return;
         } else if (command.equalsIgnoreCase("ENDFIGHTALL")) {
             try {
-                for (GameClient client : Main.INSTANCE.getGameServer().getClients()) {
+                for (GameClient client : GameServer.getClients()) {
                     Player player = client.getPlayer();
                     if (player == null)
                         continue;
@@ -2179,7 +2180,7 @@ public class CommandAdmin extends AdminUser {
             return;
         } else if (command.equalsIgnoreCase("KICKALL")) {
             this.sendMessage("Tout le monde va etre kicke.");
-            Main.INSTANCE.getGameServer().kickAll(true);
+            GameServer.INSTANCE.kickAll(true);
             return;
         } else if (command.equalsIgnoreCase("RESET")) {
             Player perso = this.getPlayer();

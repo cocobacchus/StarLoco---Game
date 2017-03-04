@@ -7,8 +7,10 @@ import org.starloco.locos.common.PathFinding;
 import org.starloco.locos.common.SocketManager;
 import org.starloco.locos.database.Database;
 import org.starloco.locos.event.EventManager;
+import org.starloco.locos.exchange.ExchangeClient;
 import org.starloco.locos.fight.arena.FightManager;
 import org.starloco.locos.fight.arena.TeamMatch;
+import org.starloco.locos.game.GameServer;
 import org.starloco.locos.game.action.ExchangeAction;
 import org.starloco.locos.game.world.World;
 import org.starloco.locos.kernel.Config;
@@ -55,7 +57,7 @@ public class CommandPlayer {
                 final String message = "Im116;" + prefix + "~" + msg.substring(5, msg.length() - 1).replace(";", ":").replace("~", "").replace("|", "").replace("<", "").replace(">", "") + "</font>";
 
                 World.world.getOnlinePlayers().stream().filter(p -> !p.noall).forEach(p -> p.send(message));
-                Main.INSTANCE.getExchangeClient().send("DM" + player.getName() + "|" + getNameServerById(Config.INSTANCE.getSERVER_ID()) + "|" + msg.substring(5, msg.length() - 1).replace("\n", "").replace("\r", "").replace(";", ":").replace("~", "").replace("|", "").replace("<", "").replace(">", "") + "|");
+                ExchangeClient.INSTANCE.send("DM" + player.getName() + "|" + getNameServerById(Config.INSTANCE.getSERVER_ID()) + "|" + msg.substring(5, msg.length() - 1).replace("\n", "").replace("\r", "").replace(";", ":").replace("~", "").replace("|", "").replace("<", "").replace(">", "") + "|");
                 return true;
             } else if (command(msg, "noall")) {
                 if (player.noall) {
@@ -129,8 +131,8 @@ public class CommandPlayer {
                 int min = (int) (uptime / (1000 * 60));
                 uptime %= (1000 * 60);
                 int sec = (int) (uptime / (1000));
-                int nbPlayer = Main.INSTANCE.getGameServer().getClients().size();
-                int nbPlayerIp = Main.INSTANCE.getGameServer().getPlayersNumberByIp();
+                int nbPlayer = GameServer.getClients().size();
+                int nbPlayerIp = GameServer.getPlayersNumberByIp();
 
                 String mess = Lang.get(player, 8).replace("#1", String.valueOf(jour)).replace("#2", String.valueOf(hour)).replace("#3", String.valueOf(min)).replace("#4", String.valueOf(sec));
                 if (nbPlayer > 0)

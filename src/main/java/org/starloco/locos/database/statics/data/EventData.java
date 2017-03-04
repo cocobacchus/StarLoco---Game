@@ -70,7 +70,6 @@ public class EventData extends AbstractDAO<Account> {
                 RS.next();
                 numbers = RS.getByte("numbers");
             }
-            System.out.println(numbers);
         } catch(SQLException e) {
             super.sendError("EventData getNumberOfEvent", e);
         } finally {
@@ -93,7 +92,6 @@ public class EventData extends AbstractDAO<Account> {
                 }
                 numbers = RS.getByte("numbers");
             }
-            System.out.println(numbers);
         } catch(SQLException e) {
             super.sendError("EventData getNumberOfEvent", e);
         } finally {

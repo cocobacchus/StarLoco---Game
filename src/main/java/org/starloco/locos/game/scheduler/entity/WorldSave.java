@@ -36,7 +36,7 @@ public class WorldSave extends Updatable {
     }
 
     public static void cast(int trys) {
-        if(trys != 0) GameServer.setState(2);
+        if(trys != 0) GameServer.INSTANCE.setState(2);
 
         try {
             World.world.logger.debug("Starting the save of the world..");
@@ -123,7 +123,7 @@ public class WorldSave extends Updatable {
             Config.INSTANCE.setSaving(false);
         }
 
-        if(trys != 0) GameServer.setState(1);
+        if(trys != 0) GameServer.INSTANCE.setState(1);
 
         if(thread != null) {
             World.world.getMaps().stream().filter(map -> map != null && map.getMobGroups() != null)

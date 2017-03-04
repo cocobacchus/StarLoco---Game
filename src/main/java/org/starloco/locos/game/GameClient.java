@@ -513,14 +513,13 @@ public class GameClient {
     private void sendTicket(String packet) {
         try {
             int id = Integer.parseInt(packet.substring(2));
-            this.account = Main.INSTANCE.getGameServer().getWaitingAccount(id);
+
+            this.account = GameServer.getAndDeleteWaitingAccount(id);
 
             if (this.account == null) {
                 SocketManager.GAME_SEND_ATTRIBUTE_FAILED(this);
                 this.kick();
             } else {
-                Main.INSTANCE.getGameServer().deleteWaitingAccount(this.account);
-
                 logger = LoggerFactory.getLogger(this.account.getName());
                 String ip = this.session.getRemoteAddress().toString().substring(1).split(":")[0];
                 

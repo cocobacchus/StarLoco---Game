@@ -166,13 +166,6 @@
             <version>2.6.0</version>
         </dependency>
 
-        <!-- https://mvnrepository.com/artifact/org.fusesource.jansi/jansi -->
-        <dependency>
-            <groupId>org.fusesource.jansi</groupId>
-            <artifactId>jansi</artifactId>
-            <version>1.14</version>
-        </dependency>
-
         <dependency>
             <groupId>com.typesafe</groupId>
             <artifactId>config</artifactId>

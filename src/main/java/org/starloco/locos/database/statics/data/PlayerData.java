@@ -435,7 +435,6 @@ public class PlayerData extends AbstractDAO<Player> {
                 if (RS.getInt("exist") > 0)
                     exist = true;
             }
-            System.out.println(exist);
         } catch (SQLException e) {
             super.sendError("PlayerData exist", e);
         } finally {
