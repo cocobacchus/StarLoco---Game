@@ -12,7 +12,7 @@ public class ExchangeHandler extends IoHandlerAdapter {
 
     @Override
     public void sessionCreated(IoSession arg0) throws Exception {
-        Main.INSTANCE.getExchangeClient().setIoSession(arg0);
+        ExchangeClient.INSTANCE.setIoSession(arg0);
     }
 
     @Override
@@ -29,7 +29,7 @@ public class ExchangeHandler extends IoHandlerAdapter {
 
     @Override
     public void sessionClosed(IoSession arg0) throws Exception {
-        Main.INSTANCE.getExchangeClient().restart();
+        ExchangeClient.INSTANCE.restart();
     }
 
     @Override
@@ -37,7 +37,7 @@ public class ExchangeHandler extends IoHandlerAdapter {
         arg1.printStackTrace();
     }
 
-    public static String ioBufferToString(Object o) {
+    private static String ioBufferToString(Object o) {
         IoBuffer ioBuffer = IoBuffer.allocate(((IoBuffer) o).capacity());
         ioBuffer.put((IoBuffer) o);
         ioBuffer.flip();

@@ -6,8 +6,12 @@ import org.apache.mina.filter.codec.ProtocolCodecFilter;
 import org.apache.mina.filter.codec.textline.LineDelimiter;
 import org.apache.mina.filter.codec.textline.TextLineCodecFactory;
 import org.apache.mina.transport.socket.nio.NioSocketAcceptor;
+import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.starloco.locos.client.Account;
 import org.starloco.locos.client.Player;
+import org.starloco.locos.exchange.ExchangeClient;
 import org.starloco.locos.game.world.World;
 import org.starloco.locos.kernel.Config;
 import org.starloco.locos.kernel.Main;
@@ -16,83 +20,95 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
-import java.util.Date;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 public class GameServer {
 
     public static short MAX_PLAYERS = 700;
+    public static GameServer INSTANCE = new GameServer();
 
-    private final ArrayList<Account> waitingClients = new ArrayList<>();
-    private IoAcceptor acceptor;
+    private final static @NotNull ArrayList<Account> waitingClients = new ArrayList<>();
+    private final static @NotNull Logger log = LoggerFactory.getLogger(GameServer.class);
+    private final @NotNull IoAcceptor acceptor;
 
-    public GameServer() {
-        Main.INSTANCE.setGameServer(this);
-        this.acceptor = new NioSocketAcceptor();
-        this.acceptor.getFilterChain().addLast("codec", new ProtocolCodecFilter(new TextLineCodecFactory(Charset.forName("UTF8"), LineDelimiter.NUL, new LineDelimiter("\n\0"))));
-        this.acceptor.getSessionConfig().setIdleTime(IdleStatus.BOTH_IDLE, 60 * 10 /*10 Minutes*/);
-        this.acceptor.setHandler(new GameHandler());
+    static {
+
     }
-    public void initialize() {
-        if (this.acceptor.isActive())
-            return;
+
+    private GameServer(){
+        acceptor = new NioSocketAcceptor();
+        acceptor.getFilterChain().addLast("codec", new ProtocolCodecFilter(new TextLineCodecFactory(Charset.forName("UTF8"), LineDelimiter.NUL, new LineDelimiter("\n\0"))));
+        acceptor.getSessionConfig().setIdleTime(IdleStatus.BOTH_IDLE, 60 * 10 /*10 Minutes*/);
+        acceptor.setHandler(new GameHandler());
+    }
+
+    public boolean start() {
+        if (acceptor.isActive()) {
+            log.warn("Error already start but try to launch again");
+            return false;
+        }
 
         try {
-            this.acceptor.bind(new InetSocketAddress(Config.INSTANCE.getGamePort()));
+            acceptor.bind(new InetSocketAddress(Config.INSTANCE.getGamePort()));
+            log.info("Game server started on address : {}:{}", Config.INSTANCE.getIp(), Config.INSTANCE.getGamePort());
+            return true;
         } catch (IOException e) {
-            Main.INSTANCE.getLogger().error("The address '" + Config.INSTANCE.getGamePort() + "' is already in use..");
-            this.close();
-            try { Thread.sleep(3000); } catch(Exception ignored) {}
-            this.initialize();
-        } finally {
-            Main.INSTANCE.getLogger().info("The game server started on address : " + Config.INSTANCE.getIp() + ":" + Config.INSTANCE.getGamePort());
+            log.error("Error while starting game server", e);
+            return false;
         }
     }
 
-    public void close() {
-        if (!this.acceptor.isActive())
-            return;
+    public void stop() {
+        if (!acceptor.isActive()) {
+            acceptor.getManagedSessions().values().stream()
+                    .filter(session -> session.isConnected() || !session.isClosing())
+                    .forEach(session -> session.close(true));
+            acceptor.dispose();
+            acceptor.unbind();
+        }
 
-        this.acceptor.getManagedSessions().values().stream().filter(session -> session.isConnected() || !session.isClosing()).forEach(session -> session.close(true));
-        this.acceptor.dispose();
-        this.acceptor.unbind();
-        Main.INSTANCE.getLogger().error("The game server was stopped.");
+        log.error("The game server was stopped.");
     }
 
-    public ArrayList<GameClient> getClients() {
-        return acceptor.getManagedSessions().values().stream().filter(session -> session.getAttachment() != null).map(session -> (GameClient) session.getAttachment()).collect(Collectors.toCollection(ArrayList::new));
+    public static List<GameClient> getClients() {
+        return INSTANCE.acceptor.getManagedSessions().values().stream()
+                .filter(session -> session.getAttachment() != null)
+                .map(session -> (GameClient) session.getAttachment())
+                .collect(Collectors.toList());
     }
 
-    public int getPlayersNumberByIp() {
-        ArrayList<String> IPS = new ArrayList<>();
-        this.getClients().stream().filter(client -> client != null && client.getAccount() != null).forEach(client -> {
-            String IP = client.getAccount().getCurrentIp();
-            if (!IP.equalsIgnoreCase("") && !IPS.contains(IP)) IPS.add(IP);
-        });
-        return IPS.size();
+    public static int getPlayersNumberByIp() {
+        return (int) getClients().stream().filter(client -> client != null && client.getAccount() != null)
+                .map(client -> client.getAccount().getCurrentIp())
+                .distinct().count();
     }
 
-    public static void setState(int state) {
-        if (Main.INSTANCE.getExchangeClient() != null && Main.INSTANCE.getExchangeClient().getConnectFuture() != null && !Main.INSTANCE.getExchangeClient().getConnectFuture().isCanceled() && Main.INSTANCE.getExchangeClient().getConnectFuture().isConnected())
-            Main.INSTANCE.getExchangeClient().send("SS" + state);
+    public void setState(int state) {
+        ExchangeClient.INSTANCE.send("SS" + state);
     }
 
-    public Account getWaitingAccount(int id) {
-        for (Account account : this.waitingClients)
-            if (account.getId() == id)
+    public static Account getAndDeleteWaitingAccount(int id){
+        Iterator<Account> it = waitingClients.listIterator();
+        while(it.hasNext()){
+            Account account = it.next();
+            if(account.getId() == id){
+                it.remove();
                 return account;
+            }
+        }
         return null;
     }
 
-    public void deleteWaitingAccount(Account account) {
-        if(this.waitingClients.contains(account)) this.waitingClients.remove(account);
+    public static void addWaitingAccount(Account account) {
+        if(!waitingClients.contains(account)) waitingClients.add(account);
     }
 
-    public void addWaitingAccount(Account account) {
-        if(!this.waitingClients.contains(account)) this.waitingClients.add(account);
+    public static void a() {
+        log.warn("Unexpected behaviour detected");
     }
-
-    public static void a() {}
 
     public void kickAll(boolean kickGm) {
         for (Player player : World.world.getOnlinePlayers()) {

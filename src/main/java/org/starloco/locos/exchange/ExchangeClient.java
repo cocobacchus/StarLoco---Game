@@ -1,93 +1,97 @@
 package org.starloco.locos.exchange;
 
-import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
+import lombok.Setter;
 import org.apache.mina.core.buffer.IoBuffer;
 import org.apache.mina.core.future.ConnectFuture;
 import org.apache.mina.core.service.IoConnector;
 import org.apache.mina.core.session.IoSession;
 import org.apache.mina.transport.socket.nio.NioSocketConnector;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.LoggerFactory;
 import org.starloco.locos.kernel.Config;
-import org.starloco.locos.kernel.Main;
 
 import java.net.InetSocketAddress;
 
 public class ExchangeClient {
 
     public static Logger logger = (Logger) LoggerFactory.getLogger(ExchangeClient.class);
+    public static ExchangeClient INSTANCE;
 
     private IoSession ioSession;
     private ConnectFuture connectFuture;
-    private IoConnector ioConnector = new NioSocketConnector();
+    private IoConnector ioConnector;
 
-    public ExchangeClient() {
-        this.ioConnector.setHandler(new ExchangeHandler());
-        Main.INSTANCE.setExchangeClient(this);
-        ExchangeClient.logger.setLevel(Level.ALL);
+    static {
+        INSTANCE = new ExchangeClient();
     }
 
-    public void setIoSession(IoSession ioSession) {
+    private ExchangeClient() {
+        init();
+    }
+
+    void setIoSession(IoSession ioSession) {
         this.ioSession = ioSession;
     }
 
-    public IoSession getIoSession() {
-        return ioSession;
+    private void init(){
+        ioConnector = new NioSocketConnector();
+        ioConnector.setHandler(new ExchangeHandler());
+        ioConnector.setConnectTimeoutMillis(1000);
     }
 
-    public ConnectFuture getConnectFuture() {
-        return connectFuture;
-    }
-
-    public void initialize() {
+    public boolean start() {
+        if(!Config.INSTANCE.isRunning()) return true;
         try {
-            this.connectFuture = this.ioConnector.connect(new InetSocketAddress(Config.INSTANCE.getExchangeIp(), Config.INSTANCE.getExchangePort()));
+            connectFuture = ioConnector.connect(new InetSocketAddress(Config.INSTANCE.getExchangeIp(), Config.INSTANCE.getExchangePort()));
         } catch (Exception e) {
-            ExchangeClient.logger.error("The game server don't found the login server. Exception : " + e.getMessage());
-            try { Thread.sleep(2000); } catch(Exception ignored) {}
-            return;
+            logger.error("Can't find login server : ", e);
+            return false;
         }
 
-        try { Thread.sleep(3000); } catch(Exception ignored) {}
-
-        if (!ioConnector.isActive()) {
-            if (!Config.INSTANCE.isRunning()) return;
-
-            ExchangeClient.logger.error("Try to connect to the login server..");
-            restart();
-            return;
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
         }
-        ExchangeClient.logger.info("The exchange client was connected on address : " + Config.INSTANCE.getExchangeIp() + ":" + Config.INSTANCE.getExchangePort());
-    }
+        if(!connectFuture.isConnected()) {
+            logger.error("Can't connect to login server");
+            return false;
+        }
 
-    public void restart() {
-        if (!Config.INSTANCE.isRunning()) return;
-
-        ExchangeClient.logger.error("The login server was not found..");
-
-        this.stop();
-        this.connectFuture = null;
-        this.ioConnector = new NioSocketConnector();
-        this.ioConnector.setHandler(new ExchangeHandler());
-        this.initialize();
+        ExchangeClient.logger.info("Exchange client connected on address : {},{}", Config.INSTANCE.getExchangeIp(), Config.INSTANCE.getExchangePort());
+        return true;
     }
 
     public void stop() {
-        if(this.ioSession != null)
-            this.ioSession.close(true);
-        if (this.connectFuture != null)
-            this.connectFuture.cancel();
+        if(ioSession != null)
+            ioSession.close(true);
+        if (connectFuture != null)
+            connectFuture.cancel();
+        connectFuture = null;
+        ioConnector.dispose();
+        ExchangeClient.logger.info("Exchange client was stopped.");
+    }
 
-        this.connectFuture = null;
-        this.ioConnector.dispose();
-        ExchangeClient.logger.info("The exchange client was stopped.");
+    void restart() {
+        if(Config.INSTANCE.isRunning()) {
+            stop();
+            init();
+            while(!INSTANCE.start()){
+                try {
+                    Thread.sleep(5000);
+                } catch (InterruptedException ignored) {
+                }
+            }
+        }
     }
 
     public void send(String packet) {
-        if(this.ioSession != null && !this.ioSession.isClosing() && this.ioSession.isConnected())
-            this.getIoSession().write(StringToIoBuffer(packet));
+        if(ioSession != null && !ioSession.isClosing() && ioSession.isConnected())
+            ioSession.write(StringToIoBuffer(packet));
     }
-    public static IoBuffer StringToIoBuffer(String packet) {
+
+    private static IoBuffer StringToIoBuffer(String packet) {
         IoBuffer ioBuffer = IoBuffer.allocate(30000);
         ioBuffer.put(packet.getBytes());
         return ioBuffer.flip();

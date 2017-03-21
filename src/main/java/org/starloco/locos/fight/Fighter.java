@@ -1,5 +1,7 @@
 package org.starloco.locos.fight;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.starloco.locos.area.map.GameCase;
 import org.starloco.locos.client.Player;
 import org.starloco.locos.client.other.Stats;
@@ -26,6 +28,7 @@ import java.util.stream.Collectors;
 
 public class Fighter implements Comparable<Fighter> {
 
+    private final Logger logger;
     public int nbrInvoc;
     public boolean inLancer = false;
     public boolean isStatique = false;
@@ -69,6 +72,7 @@ public class Fighter implements Comparable<Fighter> {
         this.pdvMax = mob.getPdvMax();
         this.pdv = mob.getPdv();
         this.gfxId = getDefaultGfx();
+        logger = LoggerFactory.getLogger("FighterMob."+mob.getInFightID());
     }
 
     public Fighter(Fight f, Player player) {
@@ -84,16 +88,18 @@ public class Fighter implements Comparable<Fighter> {
         this.pdvMax = player.getMaxPdv();
         this.pdv = player.getCurPdv();
         this.gfxId = getDefaultGfx();
+        logger = LoggerFactory.getLogger("FighterPlayer." + player.getName());
     }
 
-    public Fighter(Fight f, Collector Perco) {
+    public Fighter(Fight f, Collector collector) {
         this.fight = f;
         this.type = 5;
-        setCollector(Perco);
+        setCollector(collector);
         setId(-1);
-        this.pdvMax = (World.world.getGuild(Perco.getGuildId()).getLvl() * 100);
-        this.pdv = (World.world.getGuild(Perco.getGuildId()).getLvl() * 100);
+        this.pdvMax = (World.world.getGuild(collector.getGuildId()).getLvl() * 100);
+        this.pdv = (World.world.getGuild(collector.getGuildId()).getLvl() * 100);
         this.gfxId = 6000;
+        logger = LoggerFactory.getLogger("FighterCollector." + collector.getFullName());
     }
 
     public Fighter(Fight Fight, Prism Prisme) {
@@ -105,6 +111,7 @@ public class Fighter implements Comparable<Fighter> {
         this.pdv = Prisme.getLevel() * 10000;
         this.gfxId = Prisme.getAlignement() == 1 ? 8101 : 8100;
         Prisme.refreshStats();
+        logger = LoggerFactory.getLogger("FighterPrism." + prism.getAlignement());
     }
 
     public int getId() {
@@ -470,8 +477,7 @@ public class Fighter implements Comparable<Fighter> {
 
         //Si c'est le jouer actif qui s'autoBuff, on ajoute 1 a la durée
         this.fightBuffs.add(new SpellEffect(id,val,(addingTurnIfCanPlay && this.canPlay?duration+1:duration),turns,debuff,caster,args,spellID));
-        if(Config.INSTANCE.getDEBUG())
-            System.out.println("- Ajout du Buff "+id+" sur le personnage fighter ("+this.getId()+") val : "+val+" duration : "+duration+" turns : "+turns+" debuff : "+debuff+" spellid : "+spellID+" args : "+args+" !");
+        logger.debug("Ajout du Buff "+id+" sur le personnage fighter ("+this.getId()+") val : "+val+" duration : "+duration+" turns : "+turns+" debuff : "+debuff+" spellid : "+spellID+" args : "+args+" !");
 
         switch(id) {
             case 6://Renvoie de sort

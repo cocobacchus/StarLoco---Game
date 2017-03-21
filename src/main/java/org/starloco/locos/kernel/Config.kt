@@ -12,8 +12,6 @@ object Config {
     var AUTO_REBOOT = ConfigReader.data[ConfigReader.options.autoReboot]
     var ALL_ZAAP = ConfigReader.data[ConfigReader.options.allZaap]
     var ALL_EMOTE = ConfigReader.data[ConfigReader.options.allEmote]
-    var DEBUG = ConfigReader.data[ConfigReader.console.debug]
-    var LOGS = ConfigReader.data[ConfigReader.console.logs]
 
     var isSaving = false
     var isRunning = false
@@ -22,7 +20,7 @@ object Config {
     var TIME_PER_EVENT: Short = ConfigReader.data[ConfigReader.options.event.timePerEvent].toShort()
 
     var NAME: String = "StarLoco"
-    var url: String = "http://changer-l'url-dans-les-src-:-Config.kt/"
+    var url: String = ""
     var startMessage = "Bienvenue sur le serveur $NAME !"
     var colorMessage = "B9121B"
 

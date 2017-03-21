@@ -345,8 +345,7 @@ public class JobAction {
 
         boolean success = JobConstant.getChanceByNbrCaseByLvl(SM.get_lvl(), items.size()) >= Formulas.getRandomValue(1, 100);
 
-        if (Logging.USE_LOG)
-            Logging.getInstance().write("SecureCraft", this.player.getName() + " à crafter avec " + (success ? "SUCCES" : "ECHEC") + " l'item " + template + " (" + World.world.getObjTemplate(template).getName() + ") pour " + receiver.getName());
+        Logging.craft.debug(this.player.getName() + " à crafter avec " + (success ? "SUCCES" : "ECHEC") + " l'item " + template + " (" + World.world.getObjTemplate(template).getName() + ") pour " + receiver.getName());
         if (!success) {
             SocketManager.GAME_SEND_Ec_PACKET(this.player, "EF");
             SocketManager.GAME_SEND_Ec_PACKET(receiver, "EF");
@@ -459,8 +458,7 @@ public class JobAction {
                     break;
             }
 
-            if (Logging.USE_LOG)
-                Logging.getInstance().write("Craft", this.player.getName() + " à crafter avec " + (success ? "SUCCES" : "ECHEC") + " l'item " + templateId + " (" + World.world.getObjTemplate(templateId).getName() + ")");
+            Logging.craft.info(this.player.getName() + " à crafter avec " + (success ? "SUCCES" : "ECHEC") + " l'item " + templateId + " (" + World.world.getObjTemplate(templateId).getName() + ")");
             if (!success) {
                 SocketManager.GAME_SEND_Ec_PACKET(this.player, "EF");
                 SocketManager.GAME_SEND_IO_PACKET_TO_MAP(this.player.getCurMap(), this.player.getId(), "-" + templateId);

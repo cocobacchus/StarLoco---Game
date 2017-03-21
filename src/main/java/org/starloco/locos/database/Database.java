@@ -12,11 +12,7 @@ public class Database {
     private final static StaticsDatabase statics = new StaticsDatabase();
 
     public static boolean launchDatabase() {
-        if (!statics.initializeConnection() || !dynamics.initializeConnection()) {
-            Main.INSTANCE.stop("Initialization of database connection failed");
-            return false;
-        }
-        return true;
+        return !(!statics.initializeConnection() || !dynamics.initializeConnection());
     }
 
     public static DynamicsDatabase getDynamics() {

@@ -3134,7 +3134,7 @@ public class Player {
             case "points":
                 return this.getAccount().getPoints() + "";
             case "nbrOnline":
-                return Main.INSTANCE.getGameServer().getClients().size() + "";
+                return GameServer.getClients().size() + "";
             case "align":
                 return World.world.getStatOfAlign();
         }

@@ -29,6 +29,7 @@ import org.starloco.locos.entity.pet.Pet;
 import org.starloco.locos.entity.pet.PetEntry;
 import org.starloco.locos.exchange.transfer.DataQueue;
 import org.starloco.locos.fight.spells.Spell;
+import org.starloco.locos.game.GameServer;
 import org.starloco.locos.hdv.Hdv;
 import org.starloco.locos.hdv.HdvEntry;
 import org.starloco.locos.job.Job;
@@ -1637,7 +1638,7 @@ public class World {
     }
 
     public void reloadPlayerGroup() {
-        Main.INSTANCE.getGameServer().getClients().stream().filter(client -> client != null && client.getPlayer() != null).forEach(client -> Database.getStatics().getPlayerData().reloadGroup(client.getPlayer()));
+        GameServer.getClients().stream().filter(client -> client != null && client.getPlayer() != null).forEach(client -> Database.getStatics().getPlayerData().reloadGroup(client.getPlayer()));
     }
 
     public void reloadDrops() {

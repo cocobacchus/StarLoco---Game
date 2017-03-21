@@ -1,5 +1,6 @@
 package org.starloco.locos.exchange.transfer;
 
+import org.starloco.locos.exchange.ExchangeClient;
 import org.starloco.locos.game.world.World;
 import org.starloco.locos.kernel.Main;
 
@@ -32,7 +33,7 @@ public class DataType<T> {
                 final long count = data.count();
 
                 data.getQueue().put(count, this);
-                Main.INSTANCE.getExchangeClient().send("DI" + this.getType() + count);
+                ExchangeClient.INSTANCE.send("DI" + this.getType() + count);
                 this.wait();
             }
         } catch (InterruptedException e) {
